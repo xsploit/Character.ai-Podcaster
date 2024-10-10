@@ -51,33 +51,45 @@ The configuration settings for the characters and topics are stored in the `conf
 ![image](https://github.com/user-attachments/assets/0481479c-c5f3-4937-ac9f-9d5e585fcd7f)
 ![image](https://github.com/user-attachments/assets/b8b142fe-2b8b-4b05-94a7-b2319c4c24be)
 
-On PC:
-Open the Character.AI website in your browser (https://beta.character.ai)
-Open the developer tools (F12, Ctrl+Shift+I, or Cmd+J)
-Go to the Application tab
-Go to the Storage section and click on Local Storage
-Look for the char_token key
-Open the object, right click on value and copy your session token.
-Session_Token
+### ⚠️ WARNING: DO NOT share your session token to anyone you do not trust or if you do not know what you're doing. 
+#### _Anyone with your session token could have access to your account without your consent. Do this at your own risk._
+---
 
-On Mobile:
-Open the Character.AI website in your browser on the OLD interface (https://old.character.ai/)
-Open the URL bar, write javascript: (case sensitive) and paste the following:
+### On PC:
+1. Open the Character.AI website in your browser (https://beta.character.ai)
+2. Open the developer tools (<kbd>F12</kbd>, <kbd>Ctrl+Shift+I</kbd>, or <kbd>Cmd+J</kbd>)
+3. Go to the `Application` tab
+4. Go to the `Storage` section and click on `Local Storage`
+5. Look for the `char_token` key
+6. Open the object, right click on value and copy your session token.
+
+![Session_Token](https://github.com/realcoloride/node_characterai/assets/108619637/1d46db04-0744-42d2-a6d7-35152b967a82)
+
+### On Mobile:
+
+1. Open the Character.AI website in your browser on the OLD interface (https://old.character.ai/)
+2. Open the URL bar, write `javascript:` (case sensitive) and paste the following:
+```javascript
 (function(){let e=window.localStorage["char_token"];if(!e){alert("You need to log in first!");return;}let t=JSON.parse(e).value;document.documentElement.innerHTML=`<div><i><p>provided by node_characterai - <a href="https://github.com/realcoloride/node_characterai?tab=readme-ov-file#using-an-access-token">click here for more information</a></p></i><p>Here is your session token:</p><input value="${t}" readonly><p><strong>Do not share this with anyone unless you know what you are doing! This is your personal session token. If stolen or requested by someone you don't trust, they could access your account without your consent; if so, please close the page immediately.</strong></p><button id="copy" onclick="navigator.clipboard.writeText('${t}'); alert('Copied to clipboard!')">Copy session token to clipboard</button><button onclick="window.location.reload();">Refresh the page</button></div>`;localStorageKey=null;storageInformation=null;t=null;})();
-The following page should appear: Access_Token_Mobile
+```
+3. The following page should appear:
+![Access_Token_Mobile](https://github.com/realcoloride/node_characterai/assets/108619637/2954586c-5dab-4e1c-820c-4e8528653d14)
 
-Click the respective buttons to copy your access token or id token to your clipboard.
+4. Click the respective buttons to copy your access token or id token to your clipboard.
+---
 
 When using the package, you can:
+* Login as guest using `authenticateAsGuest()` - *for mass usage or testing purposes*
+* Login with your account or a token using `authenticateWithToken()` - *for full features and unlimited messaging*
 
-Login as guest using authenticateAsGuest() - for mass usage or testing purposes
-Login with your account or a token using authenticateWithToken() - for full features and unlimited messaging
-Finding your character's ID
+## Finding your character's ID
+
 You can find your character ID in the URL of a Character's chat page.
 
-For example, if you go to the chat page of the character Discord Moderator you will see the URL https://beta.character.ai/chat?char=8_1NyR8w1dOXmI1uWaieQcd147hecbdIK7CeEAIrdJw.
+For example, if you go to the chat page of the character `Discord Moderator` you will see the URL `https://beta.character.ai/chat?char=8_1NyR8w1dOXmI1uWaieQcd147hecbdIK7CeEAIrdJw`.
 
-The last part of the URL is the character ID: Character_ID
+The last part of the URL is the character ID:
+![Character_ID](https://i.imgur.com/nd86fN4.png)
 
 ### Example `config.json`:
 ```json
