@@ -48,6 +48,36 @@ The server will start at `http://localhost:5500` by default.
 ## Configuration
 
 The configuration settings for the characters and topics are stored in the `config.json` file located in the project root. This file allows you to customize the characters' names, IDs, voice IDs, and interaction settings.
+![image](https://github.com/user-attachments/assets/0481479c-c5f3-4937-ac9f-9d5e585fcd7f)
+![image](https://github.com/user-attachments/assets/b8b142fe-2b8b-4b05-94a7-b2319c4c24be)
+
+On PC:
+Open the Character.AI website in your browser (https://beta.character.ai)
+Open the developer tools (F12, Ctrl+Shift+I, or Cmd+J)
+Go to the Application tab
+Go to the Storage section and click on Local Storage
+Look for the char_token key
+Open the object, right click on value and copy your session token.
+Session_Token
+
+On Mobile:
+Open the Character.AI website in your browser on the OLD interface (https://old.character.ai/)
+Open the URL bar, write javascript: (case sensitive) and paste the following:
+(function(){let e=window.localStorage["char_token"];if(!e){alert("You need to log in first!");return;}let t=JSON.parse(e).value;document.documentElement.innerHTML=`<div><i><p>provided by node_characterai - <a href="https://github.com/realcoloride/node_characterai?tab=readme-ov-file#using-an-access-token">click here for more information</a></p></i><p>Here is your session token:</p><input value="${t}" readonly><p><strong>Do not share this with anyone unless you know what you are doing! This is your personal session token. If stolen or requested by someone you don't trust, they could access your account without your consent; if so, please close the page immediately.</strong></p><button id="copy" onclick="navigator.clipboard.writeText('${t}'); alert('Copied to clipboard!')">Copy session token to clipboard</button><button onclick="window.location.reload();">Refresh the page</button></div>`;localStorageKey=null;storageInformation=null;t=null;})();
+The following page should appear: Access_Token_Mobile
+
+Click the respective buttons to copy your access token or id token to your clipboard.
+
+When using the package, you can:
+
+Login as guest using authenticateAsGuest() - for mass usage or testing purposes
+Login with your account or a token using authenticateWithToken() - for full features and unlimited messaging
+Finding your character's ID
+You can find your character ID in the URL of a Character's chat page.
+
+For example, if you go to the chat page of the character Discord Moderator you will see the URL https://beta.character.ai/chat?char=8_1NyR8w1dOXmI1uWaieQcd147hecbdIK7CeEAIrdJw.
+
+The last part of the URL is the character ID: Character_ID
 
 ### Example `config.json`:
 ```json
