@@ -323,3 +323,8 @@ app.post('/continue-conversation', async (req, res) => {
 app.listen(port, () => {
     log(`Server running at http://localhost:${port}`);
 });
+
+// This should be the last route
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
