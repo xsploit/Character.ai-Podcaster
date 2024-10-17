@@ -2,19 +2,20 @@
         /* Toast styles */
         .toast {
             visibility: hidden;
-            max-width: 50px;
-            height: 50px;
+            min-width: 250px;  /* Increased from max-width: 50px */
+            min-height: 50px;  /* Changed from height: 50px */
             margin: auto;
             background-color: #333;
             color: #fff;
             text-align: center;
-            border-radius: 2px;
+            border-radius: 8px;  /* Increased for better appearance */
             position: fixed;
-            z-index: 1;
-            left: 0;right:0;
+            z-index: 9999;  /* Ensure it's on top of other elements */
+            left: 20px;  /* Changed from left: 0;right:0; */
             bottom: 30px;
             font-size: 17px;
-            white-space: nowrap;
+            padding: 16px;  /* Added padding */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);  /* Added shadow for visibility */
         }
 
         .toast #desc {
