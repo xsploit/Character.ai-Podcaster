@@ -148,22 +148,22 @@
             let isPlaying = false;
             let currentTopicIndex = 0;
             let topicStartTime = 100;
-
+        
             // Fetch configuration on page load
             fetch('http://localhost:5500/config')
                 .then(response => response.json())
                 .then(data => {
                     config = data;
-
+        
                     // Ensure timing parameters are numbers
                     config.character_interaction_interval = parseInt(config.character_interaction_interval, 10);
                     config.time_between_topics = parseInt(config.time_between_topics, 10);
-
+        
                     populateConfigForm();
                     updateTopicsList();
                     populateAudioDevices();
                     updateDarkModeIcon();
-
+        
                     // Set initial message placeholder
                     document.getElementById('initialMessage').placeholder = `Start the interview with...@${config.character2_name}`;
                 })
@@ -171,7 +171,7 @@
                     console.error('Error fetching config:', error);
                     showToast('Failed to load configuration.');
                 });
-
+        
             function populateConfigForm() {
                 const form = document.getElementById('configForm');
                 form.innerHTML = '';
@@ -190,7 +190,7 @@
                     { label: "Character Interaction Interval (seconds)", key: "character_interaction_interval" },
                     { label: "Time Between Topics (seconds)", key: "time_between_topics" }
                 ];
-
+        
                 fields.forEach(field => {
                     const div = document.createElement('div');
                     div.className = 'space-y-2';
@@ -201,30 +201,30 @@
                     form.appendChild(div);
                 });
             }
-
+        
             async function populateAudioDevices() {
                 try {
                     const devices = await navigator.mediaDevices.enumerateDevices();
                     const audioOutputDevices = devices.filter(device => device.kind === 'audiooutput');
-
+        
                     if (audioOutputDevices.length === 0) {
                         showToast('No audio output devices found.');
                         return;
                     }
-
+        
                     const char1Select = document.getElementById('character1AudioDevice');
                     const char2Select = document.getElementById('character2AudioDevice');
-
+        
                     char1Select.innerHTML = ''; // Clear existing options
                     char2Select.innerHTML = ''; // Clear existing options
-
+        
                     audioOutputDevices.forEach(device => {
                         const option1 = new Option(device.label || `Device ${device.deviceId}`, device.deviceId);
                         const option2 = new Option(device.label || `Device ${device.deviceId}`, device.deviceId);
                         char1Select.add(option1);
                         char2Select.add(option2);
                     });
-
+        
                     char1Select.value = config.character1_audio_device || '';
                     char2Select.value = config.character2_audio_device || '';
                 } catch (error) {
@@ -232,14 +232,14 @@
                     showToast('Failed to load audio devices. Please check your browser permissions and try again.');
                 }
             }
-
+        
             function updateTopicsList() {
                 const topicsList = document.getElementById('topicsList');
                 topicsList.innerHTML = '';
                 config.topics.forEach(topic => {
                     const li = document.createElement('li');
                     li.className = 'flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700 rounded-md bevel-shadow';
-
+        
                     li.innerHTML = `
                         <span class="text-sm text-gray-700 dark:text-gray-300">${topic}</span>
                         <button class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3 bevel-shadow">
@@ -254,7 +254,7 @@
                     topicsList.appendChild(li);
                 });
             }
-
+        
             function removeTopic(topic) {
                 const index = config.topics.indexOf(topic);
                 if (index > -1) {
@@ -262,7 +262,7 @@
                     updateTopicsList();
                 }
             }
-
+        
             document.getElementById('addTopic').addEventListener('click', () => {
                 const newTopic = document.getElementById('newTopic').value.trim();
                 if (newTopic) {
@@ -271,14 +271,14 @@
                     document.getElementById('newTopic').value = '';
                 }
             });
-
+        
             document.getElementById('clearTopics').addEventListener('click', () => {
                 if (confirm('Are you sure you want to clear all topics?')) {
                     config.topics = [];
                     updateTopicsList();
                 }
             });
-
+        
             document.getElementById('saveConfig').addEventListener('click', () => {
                 const form = document.getElementById('configForm');
                 const formData = new FormData(form);
@@ -286,11 +286,11 @@
                 updatedConfig.topics = config.topics;
                 updatedConfig.character1_audio_device = document.getElementById('character1AudioDevice').value;
                 updatedConfig.character2_audio_device = document.getElementById('character2AudioDevice').value;
-
+        
                 // Convert timing parameters to numbers
                 updatedConfig.character_interaction_interval = parseInt(updatedConfig.character_interaction_interval, 10);
                 updatedConfig.time_between_topics = parseInt(updatedConfig.time_between_topics, 10);
-
+        
                 fetch('http://localhost:5500/config', {
                     method: 'POST',
                     headers: {
@@ -308,66 +308,108 @@
                     showToast('Failed to save configuration.');
                 });
             });
-
-            document.getElementById('startConversation').addEventListener('click', () => {
+        
+            async function messageGenerator(initialMessage) {
+                isConversationRunning = true;
+                currentTopicIndex = 0;
+                let topicStartTime = Date.now();
+        
+                // Send the initial message to Character 1 (interviewer)
+                const initialPrompt = `You're on a podcast with ${config.character2_name}. Start the podcast with this initial topic or question: ${initialMessage}`;
+                await handleCharacterTurn('character1', initialPrompt);
+        
+                while (isConversationRunning) {
+                    // Character 2's turn (Interviewee)
+                    await handleCharacterTurn('character2', lastMessage);
+        
+                    await new Promise(resolve => setTimeout(resolve, config.character_interaction_interval * 1000));
+        
+                    // Check if it's time for a new topic
+                    const timeSinceTopicStarted = Date.now() - topicStartTime;
+                    const timeBetweenTopicsMs = config.time_between_topics * 1000;
+        
+                    // Character 1's turn (Interviewer)
+                    let interviewer_prompt;
+                    if (config.topics && currentTopicIndex < config.topics.length && timeSinceTopicStarted >= timeBetweenTopicsMs) {
+                        const topic = config.topics[currentTopicIndex];
+                        interviewer_prompt = `${config.character2_name} just said: '${lastMessage}'. As the interviewer, introduce the next topic: ${topic}. Frame it as a question or comment to continue the interview.`;
+                        currentTopicIndex++;
+                        topicStartTime = Date.now(); // Reset the topic start time
+                        addMessageToLog('System', `Topic changed to: ${topic}`); // Notify about topic change
+                    } else {
+                        interviewer_prompt = `${config.character2_name} just said: '${lastMessage}'. As the interviewer, how would you respond or what would you ask next to continue the interview?`;
+                    }
+        
+                    await handleCharacterTurn('character1', interviewer_prompt);
+        
+                    await new Promise(resolve => setTimeout(resolve, config.character_interaction_interval * 1000));
+                }
+            }
+        
+            async function handleCharacterTurn(character, prompt) {
+                const characterConfig = character === 'character1' ? 
+                    { id: config.character1_id, voice_id: config.character1_voice_id, name: config.character1_name } :
+                    { id: config.character2_id, voice_id: config.character2_voice_id, name: config.character2_name };
+        
+                try {
+                    const response = await fetch('http://localhost:5500/continue-conversation', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ lastMessage: prompt, character })
+                    });
+        
+                    const data = await response.json();
+        
+                    if (data.message) {
+                        addMessageToLog(characterConfig.name, data.message);
+                        lastMessage = data.message; // Update the last message
+                        if (data.speechUrl) {
+                            queueAudio(data.speechUrl, character);
+                        }
+                    } else {
+                        throw new Error('Invalid response from server');
+                    }
+                } catch (error) {
+                    console.error(`Error in ${character}'s turn:`, error);
+                    displayError(`Failed to process ${characterConfig.name}'s turn.`);
+                }
+            }
+        
+            document.getElementById('startConversation').addEventListener('click', async () => {
                 const initialMessage = document.getElementById('initialMessage').value.trim();
                 if (!initialMessage) {
                     showToast('Please enter an initial message.');
                     return;
                 }
-
+        
                 if (config.topics.length === 0) {
                     showToast('Please add at least one topic.');
                     return;
                 }
-
-                isConversationRunning = true;
-                currentTopicIndex = 0;
-                topicStartTime = Date.now();
+        
                 document.getElementById('startConversation').disabled = true;
-
                 addMessageToLog(config.character1_name, initialMessage);
-
-                fetch('http://localhost:5500/start-conversation', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ initialMessage }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.character2 && data.character2.message) {
-                        addMessageToLog(config.character2_name, data.character2.message);
-                        if (data.character2.speechUrl) {
-                            queueAudio(data.character2.speechUrl, 'character2');
-                        }
-                        setTimeout(() => {
-                            if (isConversationRunning) {
-                                introduceNextTopic();
-                            }
-                        }, config.character_interaction_interval * 1000);
-                    } else {
-                        displayError('Invalid response from server when starting conversation.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error starting conversation:', error);
-                    displayError('Failed to start conversation.');
+        
+                try {
+                    await messageGenerator(initialMessage);
+                } catch (error) {
+                    console.error('Error in message generator:', error);
+                    displayError('Failed to run the conversation.');
+                } finally {
                     isConversationRunning = false;
                     document.getElementById('startConversation').disabled = false;
-                });
+                }
             });
-
+        
             document.getElementById('stopConversation').addEventListener('click', () => {
                 isConversationRunning = false;
                 addMessageToLog('System', 'Conversation has been stopped.');
                 document.getElementById('startConversation').disabled = false;
             });
-
+        
             document.getElementById('startNewConversation').addEventListener('click', () => {
                 isConversationRunning = false;
-
+        
                 fetch('http://localhost:5500/start-new-conversations', {
                     method: 'POST',
                 })
@@ -382,15 +424,15 @@
                             document.getElementById('initialMessage').value = '';
                             document.getElementById('startConversation').disabled = false;
                             addMessageToLog('System', 'New conversations started for both characters. Enter an initial message to begin.');
-
+        
                             // Update the config with new history IDs
                             config.character1_history_id = data.character1_history_id;
                             config.character2_history_id = data.character2_history_id;
-
+        
                             // Update the form fields with new history IDs
                             document.getElementById('character1_history_id').value = data.character1_history_id;
                             document.getElementById('character2_history_id').value = data.character2_history_id;
-
+        
                             currentTopicIndex = 0;
                         }
                     }
@@ -402,98 +444,7 @@
                     isConversationRunning = true; // Re-enable conversation if error occurs
                 });
             });
-
-            function introduceNextTopic() {
-                if (!isConversationRunning) return;
-
-                topicStartTime = Date.now();
-
-                if (currentTopicIndex >= config.topics.length) {
-                    addMessageToLog('System', 'All topics have been introduced. Continuing natural conversation.');
-                    continueNaturalConversation('', 'character1');
-                    return;
-                }
-
-                const topic = config.topics[currentTopicIndex];
-                const prompt = `As the interviewer, introduce the following topic: "${topic}". Frame it as a question or comment to continue the interview.`;
-                currentTopicIndex++;
-
-                fetch('http://localhost:5500/continue-conversation', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ lastMessage: prompt, character: 'character1' }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.message) {
-                        addMessageToLog(config.character1_name, data.message);
-                        if (data.speechUrl) {
-                            queueAudio(data.speechUrl, 'character1');
-                        }
-                        setTimeout(() => {
-                            if (isConversationRunning) {
-                                continueNaturalConversation(data.message, 'character2');
-                            }
-                        }, config.character_interaction_interval * 1000);
-                    } else {
-                        displayError('Invalid response from server when introducing topic.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error introducing topic:', error);
-                    displayError('Failed to introduce the next topic.');
-                });
-            }
-
-            function continueNaturalConversation(lastMessage, character) {
-                if (!isConversationRunning) return;
-
-                const sender = character === 'character1' ? config.character2_name : config.character1_name;
-                const prefixedMessage = lastMessage ? `${sender}: ${lastMessage}` : `${sender}:`;
-
-                fetch('http://localhost:5500/continue-conversation', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ lastMessage: lastMessage || '', character }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.message) {
-                        const currentCharacter = character === 'character1' ? config.character1_name : config.character2_name;
-                        addMessageToLog(currentCharacter, data.message);
-                        if (data.speechUrl) {
-                            queueAudio(data.speechUrl, character);
-                        }
-
-                        const nextCharacter = character === 'character1' ? 'character2' : 'character1';
-
-                        // Calculate time since the current topic started
-                        const timeSinceTopicStarted = Date.now() - topicStartTime;
-                        const timeBetweenTopicsMs = config.time_between_topics * 1000;
-
-                        setTimeout(() => {
-                            if (isConversationRunning) {
-                                if (nextCharacter === 'character1' && currentTopicIndex < config.topics.length && timeSinceTopicStarted >= timeBetweenTopicsMs) {
-                                    introduceNextTopic();
-                                } else {
-                                    continueNaturalConversation(data.message, nextCharacter);
-                                }
-                            }
-                        }, config.character_interaction_interval * 1000);
-                    } else {
-                        displayError('Invalid response from server during conversation.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error continuing conversation:', error);
-                    displayError('Failed to continue conversation.');
-                });
-            }
-
+        
             function addMessageToLog(character, message) {
                 const log = document.getElementById('conversationLog');
                 const entry = document.createElement('div');
@@ -502,22 +453,22 @@
                 log.appendChild(entry);
                 log.scrollTop = log.scrollHeight;
             }
-
+        
             function queueAudio(url, character) {
                 if (url) {
                     audioQueue.push({ url, character });
                     playNextAudio();
                 }
             }
-
+        
             function playNextAudio() {
                 if (isPlaying || audioQueue.length === 0) return;
-
+        
                 isPlaying = true;
                 const { url, character } = audioQueue.shift();
-
+        
                 const audio = new Audio(url);
-
+        
                 if (typeof audio.setSinkId === 'function') {
                     const deviceId = config[`${character}_audio_device`];
                     if (deviceId) {
@@ -535,26 +486,26 @@
                 } else {
                     audio.play();
                 }
-
+        
                 audio.onended = () => {
                     isPlaying = false;
                     playNextAudio();
                 };
-
+        
                 audio.onerror = (e) => {
                     console.error(`Error playing audio: ${e}`);
                     isPlaying = false;
                     playNextAudio();
                 };
             }
-
+        
             document.getElementById('darkModeToggle').addEventListener('click', () => {
                 document.documentElement.classList.toggle('dark');
                 const isDarkMode = document.documentElement.classList.contains('dark');
                 localStorage.setItem('darkMode', isDarkMode);
                 updateDarkModeIcon();
             });
-
+        
             function updateDarkModeIcon() {
                 const isDarkMode = document.documentElement.classList.contains('dark');
                 const icon = document.getElementById('darkModeIcon');
@@ -562,12 +513,12 @@
                     `<path d="M10 2a8 8 0 000 16V2z"></path>` :
                     `<path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>`;
             }
-
+        
             // Load dark mode preference
             if (localStorage.getItem('darkMode') === 'true') {
                 document.documentElement.classList.add('dark');
             }
-
+        
             // Tab switching functionality
             document.getElementById('configTab').addEventListener('click', () => {
                 document.getElementById('configPanel').classList.remove('hidden');
@@ -575,14 +526,14 @@
                 document.getElementById('configTab').classList.add('bg-primary-100', 'dark:bg-primary-900', 'text-primary-700', 'dark:text-primary-100');
                 document.getElementById('topicsTab').classList.remove('bg-primary-100', 'dark:bg-primary-900', 'text-primary-700', 'dark:text-primary-100');
             });
-
+        
             document.getElementById('topicsTab').addEventListener('click', () => {
                 document.getElementById('configPanel').classList.add('hidden');
                 document.getElementById('topicsPanel').classList.remove('hidden');
                 document.getElementById('topicsTab').classList.add('bg-primary-100', 'dark:bg-primary-900', 'text-primary-700', 'dark:text-primary-100');
                 document.getElementById('configTab').classList.remove('bg-primary-100', 'dark:bg-primary-900', 'text-primary-700', 'dark:text-primary-100');
             });
-
+        
             // Toast function
             function showToast(message) {
                 const toast = document.getElementById('toast');
@@ -591,6 +542,14 @@
                 toast.className = "toast show";
                 setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
             }
+        
+            function displayError(message) {
+                console.error(message);
+                addMessageToLog('System', `Error: ${message}`);
+                showToast(message);
+            }
+        
+            let lastMessage = ''; // Global variable to store the last message
         });
     </script>
 </body>
