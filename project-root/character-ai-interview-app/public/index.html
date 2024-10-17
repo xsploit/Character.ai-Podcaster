@@ -75,7 +75,7 @@
                         <!-- Topics will be dynamically added here -->
                     </ul>
                     <div class="space-y-4 p-4">
-                        <div class="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700 rounded-md bevel-shadow">
+                        <div class="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-1 rounded-md bevel-shadow">
                             <span class="text-sm text-gray-700 dark:text-gray-300">ello</span>
                             <button class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3 bevel-shadow">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash h-4 w-4">
@@ -147,7 +147,7 @@
             let audioQueue = [];
             let isPlaying = false;
             let currentTopicIndex = 0;
-            let topicStartTime = null;
+            let topicStartTime = 100;
 
             // Fetch configuration on page load
             fetch('http://localhost:5500/config')
