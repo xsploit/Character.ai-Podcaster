@@ -1,7 +1,8 @@
 
 
 # Character.ai Podcaster
-
+Your going to have to manually update the index.js in  cainode modules
+https://github.com/KevinAdhaikal/CAINode/blob/main/index.js
 Character.ai Podcaster is a dynamic application designed to simulate podcast-style conversations between two characters using the Character.AI API. With the ability to route audio output to different devices and manage topics in real-time, it provides a unique and engaging experience for virtual podcasting.
 
 ## Table of Contents
